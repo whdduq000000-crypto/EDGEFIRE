@@ -1,0 +1,31 @@
+services:
+  postgis:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: edgefire
+      POSTGRES_USER: edgefire
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/init_env.py first}
+    ports:
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U edgefire -d edgefire']
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server','--appendonly','yes']
+    ports:
+      - '127.0.0.1:6380:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD','redis-cli','ping']
+      interval: 5s
+      timeout: 3s
+      retries: 15
+volumes:
+  postgres_data:
+  redis_data:
