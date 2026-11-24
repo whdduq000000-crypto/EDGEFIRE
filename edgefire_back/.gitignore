@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+.pytest_cache/
+*.sqlite*
+*.db
+runtime/
+*.pt
+*.joblib
+node_modules/
+*.log
+
+mqtt_pending.jsonl
+celerybeat-schedule*

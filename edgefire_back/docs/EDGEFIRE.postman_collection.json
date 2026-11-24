@@ -1,0 +1,186 @@
+{
+  "info": {
+    "name": "EDGE-FIRE WBS V2.1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8200"
+    },
+    {
+      "key": "ui_key",
+      "value": ""
+    },
+    {
+      "key": "hw_key",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/health"
+      }
+    },
+    {
+      "name": "Zones",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{ui_key}}"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/zones"
+      }
+    },
+    {
+      "name": "Sensors",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{ui_key}}"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/sensors"
+      }
+    },
+    {
+      "name": "Nearby",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{ui_key}}"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/sensors/nearby?latitude=37.88&longitude=127.76&radius_m=1000"
+      }
+    },
+    {
+      "name": "Telemetry demo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{hw_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/telemetry/multimodal",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"node_id\": \"DEMO-POSTMAN\", \"boot_id\": \"{{$guid}}\", \"sequence_no\": 1, \"source\": \"demo\", \"gas_unit\": \"ppm\", \"gas_data\": {\"CO\": 45, \"H2\": 5}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{ui_key}}"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/telemetry/history?hours=24"
+      }
+    },
+    {
+      "name": "WS ticket",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{ui_key}}"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/storage/ws-ticket"
+      }
+    },
+    {
+      "name": "PTZ simulation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{ui_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/camera/ptz/command",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"action\": \"right\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Diffusion",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{ui_key}}"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/prediction/diffusion"
+      }
+    },
+    {
+      "name": "Dispatch stats",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{ui_key}}"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/dispatch/stats"
+      }
+    },
+    {
+      "name": "Sync",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{ui_key}}"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/storage/sync"
+      }
+    }
+  ]
+}
