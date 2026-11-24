@@ -16,3 +16,5 @@ Not executed here:
 - Real fire model accuracy, throughput/latency targets, long-duration test
 
 No external repository was modified. Test keys, fixtures, runtime DB and images are not bundled.
+
+V2.1 additional: pytest 11/11 passed (SQLite), three consecutive runs after WebSocket cleanup fix. PostgreSQL, Redis/Celery, MQTT, actual frontend full build, actual hardware and remote links remain unverified.

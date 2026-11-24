@@ -10,6 +10,7 @@ from .db import DB
 from .jobs import Jobs
 from .bus import Bus
 from .security import check,signer
+from .wbs import gas_analysis, register_routes
 from .schemas import Telemetry,WorkerPing,Claim,Lease,Failure
 LOG=logging.getLogger('edgefire')
 REGIONS=set('chuncheon seoul suwon incheon wonju gangneung goyang paju namyangju yangpyeong gapyeong pocheon sokcho donghae samcheok hongcheon pyeongchang jeongseon'.split())
@@ -40,7 +41,7 @@ def create_app(settings=None):
         await asyncio.to_thread(db.init);await asyncio.to_thread(jobs.init);await bus.start()
         try:yield
         finally:await bus.close();db.engine.dispose()
-    app=FastAPI(title='EDGE-FIRE Remote Backend',version='2.0.0',lifespan=lifespan)
+    app=FastAPI(title='EDGE-FIRE Remote Backend',version='2.1.0',lifespan=lifespan)
     app.state.db=db;app.state.jobs=jobs;app.state.bus=bus
     app.add_middleware(CORSMiddleware,allow_origins=list(s.origins),allow_credentials=False,allow_methods=['GET','POST'],allow_headers=['Content-Type','X-API-Key'])
     def ui(x_api_key:str|None=Header(None)):
@@ -62,7 +63,7 @@ def create_app(settings=None):
         return response
     async def aux_json(path,**kw):return (await aux(path,**kw)).json()
     @app.get('/')
-    def root():return {'status':'ONLINE','message':'EDGE-FIRE remote research prototype','version':'2.0.0'}
+    def root():return {'status':'ONLINE','message':'EDGE-FIRE remote research prototype','version':'2.1.0'}
     @app.get('/health')
     def health():
         from sqlalchemy import text
@@ -72,12 +73,17 @@ def create_app(settings=None):
         except Exception:return JSONResponse({'status':'DB_UNAVAILABLE'},status_code=503)
     @app.post('/api/v1/telemetry/multimodal',status_code=202,dependencies=[Depends(hardware)])
     @app.post('/api/v1/telemetry',status_code=202,dependencies=[Depends(hardware)])
-    async def ingest(packet:Telemetry):
-        payload=packet.model_dump(exclude_none=True);a=assessment_for(payload,s.rules)
+    async def ingest(packet:Telemetry, queued:bool=False):
+        if queued:
+            if not bus.redis:raise HTTPException(503,'Redis Stream required')
+            try:mid=await bus.redis.xadd('edgefire:telemetry:ingest',{'payload':packet.model_dump_json(exclude_none=True)})
+            except Exception:raise HTTPException(503,'Redis Stream unavailable')
+            return {'status':'QUEUED','stream_id':mid,'node_id':packet.node_id,'notice':'DB commit pending; use history to verify'}
+        payload=packet.model_dump(exclude_none=True);a=await asyncio.to_thread(gas_analysis,db,payload,assessment_for(payload,s.rules))
         try:r,new=await asyncio.to_thread(db.save,payload,a)
         except ValueError as e:raise HTTPException(409,str(e))
         event=r['payload']|{'event_type':'telemetry','event_id':r['id'],'assessment':r['result'],'received_at':r['created']}
-        if new:await bus.publish(event)
+        if new:await bus.cache_node(event);await bus.publish(event)
         return {'status':'STORED' if new else 'DUPLICATE','node_id':r['node_id'],'event_id':r['id'],'assessment':r['result']}
     @app.get('/api/v1/telemetry',dependencies=[Depends(ui)])
     @app.get('/api/v1/storage/telemetry',dependencies=[Depends(ui)])
@@ -124,7 +130,8 @@ def create_app(settings=None):
         finally:
             bus.clients.discard(q)
             for t in (t1,t2):t.cancel()
-            await asyncio.gather(t1,t2,return_exceptions=True)
+            try:await asyncio.gather(t1,t2,return_exceptions=True)
+            except asyncio.CancelledError:pass
     @app.get('/api/v1/storage/config',dependencies=[Depends(ui)])
     def config():
         w=jobs.workers();return {'storage_type':'central_db_files_remote_worker','operational_use':False,'worker_available':bool(w),'model_id':w[0]['model_id'] if w else 'unavailable','model_status':'training_snapshot_not_validated','ai_model_available':bool(w),'worker_count':len(w)}
@@ -234,4 +241,5 @@ def create_app(settings=None):
         completed=await asyncio.to_thread(jobs.complete,jid,claim_token,r,raw)
         await bus.publish({'event_type':'vision_review' if j['kind']=='vision' else 'assessment_completed','job_id':jid,'node_id':j['node_id'],'telemetry_event_id':j['telemetry_event_id'],'stage':2 if j['telemetry_event_id'] and j['kind']=='vision' else None,'result':completed['result'],'operational_use':False})
         return completed
+    register_routes(app,db,bus,s,ui,hardware,worker,aux_json)
     return app

@@ -1,6 +1,7 @@
 import json,time,uuid,hashlib
 from sqlalchemy import create_engine,text
 from sqlalchemy.exc import IntegrityError
+from .wbs import init_wbs, mirror_packet
 class DB:
     def __init__(self, settings):
         self.postgres=settings.db_url.startswith('postgresql')
@@ -25,6 +26,7 @@ class DB:
                 c.execute(text('ALTER TABLE telemetry ADD COLUMN IF NOT EXISTS geom geometry(Point,4326) GENERATED ALWAYS AS (CASE WHEN latitude IS NOT NULL AND longitude IS NOT NULL THEN ST_SetSRID(ST_MakePoint(longitude,latitude),4326) END) STORED'))
                 c.execute(text('CREATE INDEX IF NOT EXISTS telemetry_geom_gix ON telemetry USING GIST(geom)'))
                 c.execute(text('CREATE INDEX IF NOT EXISTS telemetry_geography_gix ON telemetry USING GIST((geom::geography))'))
+            init_wbs(self,c)
     @staticmethod
     def decode(r):
         v=dict(r); v['payload']=json.loads(v['payload']); v['result']=json.loads(v.pop('assessment')); v.pop('payload_hash',None); v.pop('geom',None); v.pop('rn',None); return v
@@ -39,6 +41,7 @@ class DB:
                 old=c.execute(text('SELECT * FROM telemetry WHERE node_id=:node_id AND boot_id=:boot_id AND seq=:seq'),params).mappings().one()
                 if old['payload_hash']!=digest: raise ValueError('Sequence already used with a different payload')
                 return self.decode(old),False
+            mirror_packet(self,c,payload,eid,assessment)
             if assessment.get('risk_level') is not None and assessment['risk_level']>=3:
                 c.execute(text('INSERT INTO alerts(id,event_id,created,node_id,kind,payload) VALUES(:id,:event_id,:created,:node_id,:kind,:payload)'),dict(id='ALT_'+uuid.uuid4().hex,event_id=eid,created=now,node_id=payload['node_id'],kind='prototype_gas_trigger',payload=json.dumps(assessment)))
         return self.get(eid),True
@@ -81,5 +84,12 @@ class DB:
         with self.engine.connect() as c:return [dict(r) for r in c.execute(text(sql),dict(lat=lat,lon=lon,meters=meters)).mappings()]
     def record_forecast(self,result):
         ident='FC_'+uuid.uuid4().hex
-        with self.engine.begin() as c:c.execute(text('INSERT INTO forecasts(id,created,payload) VALUES(:id,:now,:payload)'),dict(id=ident,now=time.time(),payload=json.dumps(result,allow_nan=False)))
+        with self.engine.begin() as c:
+            c.execute(text('INSERT INTO forecasts(id,created,payload) VALUES(:id,:now,:payload)'),dict(id=ident,now=time.time(),payload=json.dumps(result,allow_nan=False)))
+            for i,f in enumerate(result.get('features',[])):
+                g=f.get('geometry') or {}; minutes=(f.get('properties') or {}).get('minutes')
+                if minutes not in (10,20,30) or g.get('type') not in ('Polygon','MultiPolygon'):continue
+                params=dict(id=ident,no=i,m=minutes,g=json.dumps(g,allow_nan=False))
+                c.execute(text('INSERT INTO forecast_polygons(forecast_id,feature_no,minutes,geometry) VALUES(:id,:no,:m,:g)'),params)
+                if self.postgres:c.execute(text('UPDATE forecast_polygons SET geom=ST_SetSRID(ST_GeomFromGeoJSON(:g),4326) WHERE forecast_id=:id AND feature_no=:no'),params)
         return ident

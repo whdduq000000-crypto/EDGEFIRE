@@ -73,7 +73,7 @@ def main():
     # Never show default mock popup on integrated dashboard.
     m=m.replace('const sensor = MOCK_SENSORS.find((s) => s.id === sensorId) || MOCK_SENSORS[0];','const sensor = props.enableForecast ? null : MOCK_SENSORS.find((s) => s.id === sensorId) || MOCK_SENSORS[0];')
     # Existing exact allowlist; append four new paths, not arbitrary proxy.
-    r=replace_once(r,'^(config|training-status|','^(telemetry|nodes|nodes\\.geojson|ws-ticket|alerts(?:\\/ALT_[a-f0-9]{32}\\/ack)?|config|training-status|')
+    r=replace_once(r,'^(config|training-status|','^(sync|telemetry|nodes|nodes\\.geojson|ws-ticket|alerts(?:\\/ALT_[a-f0-9]{32}\\/ack)?|config|training-status|')
     backups=root.parent/(root.name+'_remote_patch_backup');backups.mkdir(exist_ok=False)
     for f,content in [(page,s),(cesium,m),(proxy,r)]:
         relative=f.relative_to(root);backup=backups/relative;backup.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(f,backup);f.write_text(content,encoding='utf-8')

@@ -11,3 +11,6 @@ runtime/
 *.joblib
 node_modules/
 *.log
+
+mqtt_pending.jsonl
+celerybeat-schedule*

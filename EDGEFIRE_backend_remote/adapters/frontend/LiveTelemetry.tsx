@@ -9,7 +9,7 @@ const colors=['#94a3b8','#22c55e','#60a5fa','#eab308','#f97316','#ef4444'];
 function normalize(row:any):Packet{return {...row.payload,event_id:row.id,assessment:row.result,received_at:row.created};}
 function merge(a:Packet[],b:Packet[]){const m=new Map<string,Packet>();[...a,...b].forEach(p=>m.set(p.event_id,p));return [...m.values()].sort((x,y)=>x.timestamp-y.timestamp||(x.received_at||0)-(y.received_at||0)).slice(-1000);}
 function fmt(v:number){return new Date(v*1000).toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul'});}
-export default function LiveTelemetry({selectedSensorId,onNode,onPackets,onReview}:{selectedSensorId:string;onNode:(id:string)=>void;onPackets:(items:Packet[])=>void;onReview:(review:Review)=>void}){
+export default function LiveTelemetry({selectedSensorId,onNode,onPackets,onReview,allowHistorical=true}:{selectedSensorId:string;onNode:(id:string)=>void;onPackets:(items:Packet[])=>void;onReview:(review:Review)=>void;allowHistorical?:boolean}){
  const [packets,setPackets]=useState<Packet[]>([]),[connected,setConnected]=useState(false),[historical,setHistorical]=useState(false),[err,setErr]=useState(''),[clock,setClock]=useState(Date.now());
  const callbacks=useRef({onPackets,onReview});callbacks.current={onPackets,onReview};
  useEffect(()=>{let active=true;let timer:ReturnType<typeof setTimeout>|undefined;let ws:WebSocket|undefined;let failures=0;
@@ -24,7 +24,7 @@ export default function LiveTelemetry({selectedSensorId,onNode,onPackets,onRevie
  const chart=rows.map(p=>({time:fmt(p.timestamp),...Object.fromEntries(gasKeys.map(k=>[k,p.gas_data?.[k]??null])),...Object.fromEntries(rawKeys.map(k=>['raw:'+k,p.raw_data?.[k]??null]))}));
  const risk=current?.assessment?.risk_level??0;const stale=current?clock/1000-(current.received_at||current.timestamp)>30:true;
  return <div className="h-full min-h-0 flex flex-col gap-1 text-xs overflow-auto">
- <div className="flex justify-between items-center gap-1"><button className="bg-gray-700 rounded px-1" onClick={()=>setHistorical(v=>!v)}>{historical?'실시간 센서 보기':'과거 대기자료 보기'}</button><span className={connected?'text-green-300':'text-yellow-300'}>{connected?'WS 연결':'재연결 중'}</span></div>
+ <div className="flex justify-between items-center gap-1">{allowHistorical&&<button className="bg-gray-700 rounded px-1" onClick={()=>setHistorical(v=>!v)}>{historical?'실시간 센서 보기':'과거 대기자료 보기'}</button>}<span className={connected?'text-green-300':'text-yellow-300'}>{connected?'WS 연결':'재연결 중'}</span></div>
  {historical?<GasChart selectedSensorId={selectedSensorId}/>:<>
  {err&&<p role="status" className="text-yellow-300">{err}</p>}
  <select aria-label="실시간 센서" className="bg-gray-900 rounded p-1" value={current?.node_id||''} onChange={e=>onNode(e.target.value)}>{!latest.length&&<option value="">수신 대기</option>}{latest.map(n=><option key={n.node_id} value={n.node_id}>{n.node_id} ({n.source==='measured'?'실측':n.source==='demo'?'시연':'출처 미확인'})</option>)}</select>

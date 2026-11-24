@@ -1,3 +1,7 @@
+# V2.1 상세 WBS 추가 안내
+
+[W6–W15 상세 구현 상태](docs/WBS_6_15.md) · [실행 및 설치 순서](docs/WBS_RUN.md) · [Postman Collection](docs/EDGEFIRE.postman_collection.json). 기존 공용 FE는 `patch_team_frontend.py`로 `/remote` 추가, AI 통합 FE는 기존 패치 사용. 아래 V2.0 설명도 기본 연동에 유효.
+
 # EDGE-FIRE 백엔드 v2.0 — 원격 통합 패키지
 
 2026-11-24 | FastAPI · PostgreSQL/PostGIS · Redis · WebSocket · 원격 AI 워커 · 센서 게이트웨이

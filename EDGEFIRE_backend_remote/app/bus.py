@@ -37,3 +37,11 @@ class Bus:
             except Exception: self.connected=False
         # Single-process degraded mode; REST history remains authoritative.
         self.dispatch(event)
+
+    async def cache_node(self,event):
+        if not self.redis:return
+        # Only the most recent observation wins; late replay must not replace it.
+        key='node:status:'+event['node_id']
+        script="""local t=redis.call('HGET',KEYS[1],'timestamp'); if not t or tonumber(t)<=tonumber(ARGV[1]) then redis.call('HSET',KEYS[1],'timestamp',ARGV[1],'payload',ARGV[2]); redis.call('EXPIRE',KEYS[1],60); return 1 end; return 0"""
+        try:await self.redis.eval(script,1,key,event['timestamp'],json.dumps(event,allow_nan=False))
+        except Exception:LOG.warning('Redis node cache unavailable')
