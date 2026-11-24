@@ -29,7 +29,7 @@ Stream/Celery (Redis 실행, API DB init 완료 후 별도 2개 터미널; backe
 기본 API는 `STORED` 반환, `?queued=true`는 `QUEUED` (DB에 아직 없음). worker+beat 시작 후 조회/WS로 저장 확인. Windows solo는 성능 목표 측정용 아님. Redis 정상 연결이 아니라면 /health에 local-fallback 표시.
 
 ## FE: 기존 팀 main 코드도 연결 가능
-`edgefire_front` 원본을 수정하지 않고 `/remote` 화면을 추가. AI 통합 브랜치를 쓰는 팀은 기존 `patch_frontend.py`를 사용. 두 패치를 동시에 적용하지 않음.
+**`demo-integration` 브랜치에는 `/remote` 화면이 이미 추가되어 있습니다. 이 브랜치에서 아래 패치 명령은 실행하지 마세요.** 원래 `main`의 깨끗한 FE 복사본에 추가할 때만 실행합니다. AI 통합 브랜치는 기존 `patch_frontend.py`를 사용. 두 패치를 동시에 적용하지 않음.
 ```powershell
 # EDGEFIRE_backend_remote 폴더 기준
 .\.venv\Scripts\python.exe adapters/frontend/patch_team_frontend.py --front ..\edgefire_front
