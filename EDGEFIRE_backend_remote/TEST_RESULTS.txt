@@ -1,0 +1,20 @@
+EDGE-FIRE Remote Backend v2.0 — verification record
+
+Executed in the creation environment:
+- Python syntax compile: app, adapters, scripts, tests — PASS
+- Pytest API contract suite (SQLite temporary database): 7 passed
+- Actual loopback TCP / Uvicorn process: startup and /health — PASS
+- Hardware sender process: 5 synthetic packets sent over HTTP, 5 stored, local spool empty — PASS
+- Remote AI worker process: synthetic test predictor and fake checkpoint, actual HTTP claim/input/result upload, COMPLETED — PASS (transport only, NOT YOLO inference)
+- LiveTelemetry.tsx TypeScript transpile syntax: 0 diagnostics — PASS (not complete Next.js build/type-check)
+
+Not executed here:
+- Actual Docker Compose PostGIS/Redis, GiST/MVT/nearby SQL or Redis pub/sub service
+- Original full Next.js build or patch applied on a full repository checkout
+- Real Tailscale connections between team computers, firewall settings
+- Actual AI checkpoint / existing AI auxiliary assets or physical hardware/LoRa/thermal/PTZ
+- Real fire model accuracy, throughput/latency targets, long-duration test
+
+No external repository was modified. Test keys, fixtures, runtime DB and images are not bundled.
+
+V2.1 additional: pytest 11/11 passed (SQLite), three consecutive runs after WebSocket cleanup fix. PostgreSQL, Redis/Celery, MQTT, actual frontend full build, actual hardware and remote links remain unverified.

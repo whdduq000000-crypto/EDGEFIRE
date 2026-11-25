@@ -1,0 +1,2 @@
+{"node_id":"NODE_WUI_0102","source":"demo","raw_data":{"MQ2_adc":12000,"MQ135_adc":9500},"environment":{"temperature":24.2,"humidity_percent":49.5},"thermal":{"max_c":29.1,"mean_c":25.2,"frame_width":32,"frame_height":24}}
+{"node_id":"NODE_WUI_0102","source":"demo","raw_data":{"MQ2_adc":12100,"MQ135_adc":9510},"environment":{"temperature":24.3,"humidity_percent":49.6}}
